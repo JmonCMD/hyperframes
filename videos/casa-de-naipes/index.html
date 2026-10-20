@@ -1,0 +1,2015 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>La casa de naipes</title>
+    <script src="gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "HF Display";
+        src: url("fonts/InterDisplay-Black.otf") format("opentype");
+        font-weight: 900;
+      }
+      @font-face {
+        font-family: "HF Display";
+        src: url("fonts/InterDisplay-Bold.otf") format("opentype");
+        font-weight: 700;
+      }
+      @font-face {
+        font-family: "HF Text";
+        src: url("fonts/Inter-SemiBold.otf") format("opentype");
+        font-weight: 600;
+      }
+      @font-face {
+        font-family: "HF Text";
+        src: url("fonts/Inter-Medium.otf") format("opentype");
+        font-weight: 500;
+      }
+      @font-face {
+        font-family: "HF Mono";
+        src: url("fonts/JetBrainsMono-Medium.ttf") format("truetype");
+        font-weight: 500;
+      }
+
+      :root {
+        --ink: #0b0d0c;
+        --gold: #f2c14e;
+        --gold-deep: #b8862b;
+        --green: #3f9b62;
+        --green-deep: #1d4a33;
+        --cream: #f6eedb;
+        --red: #e5483f;
+        --grey: #9b9690;
+      }
+      body {
+        margin: 0;
+        background: #000;
+        color: #fff;
+        font-family: "HF Text", sans-serif;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--ink);
+      }
+      .layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      #glow-spot {
+        background: radial-gradient(60% 70% at 50% 62%, rgba(255, 236, 196, 0.16), transparent 70%);
+      }
+      #glow-gold {
+        background:
+          radial-gradient(55% 60% at 70% 30%, rgba(242, 193, 78, 0.26), transparent 70%),
+          radial-gradient(60% 60% at 20% 85%, rgba(63, 155, 98, 0.3), transparent 70%),
+          linear-gradient(180deg, #10180f, #0b0d0c);
+      }
+      #glow-red {
+        background:
+          radial-gradient(60% 60% at 50% 40%, rgba(229, 72, 63, 0.22), transparent 70%),
+          linear-gradient(180deg, #17181a, #0c0c0d);
+      }
+      #glow-ai {
+        background:
+          radial-gradient(50% 55% at 50% 55%, rgba(242, 193, 78, 0.24), transparent 70%),
+          radial-gradient(45% 50% at 85% 20%, rgba(80, 200, 140, 0.22), transparent 70%),
+          linear-gradient(180deg, #0f1712, #0b0d0c);
+      }
+      #glow-gold,
+      #glow-red,
+      #glow-ai {
+        opacity: 0;
+      }
+      #vignette {
+        background: radial-gradient(75% 75% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.6));
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .stage {
+        position: absolute;
+        inset: 0;
+      }
+      .abs {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+
+      /* ---------- titles ---------- */
+      .title {
+        position: absolute;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        gap: 28px;
+        font-family: "HF Display", sans-serif;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+      }
+      .tag {
+        position: absolute;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-family: "HF Mono", monospace;
+        font-size: 26px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #d9d2c3;
+      }
+      .word {
+        display: inline-block;
+      }
+
+      /* ---------- playing cards ---------- */
+      .pc {
+        width: 46px;
+        height: 150px;
+        border-radius: 6px;
+        box-sizing: border-box;
+        border: 2px solid var(--card-edge, var(--gold));
+        background:
+          repeating-linear-gradient(
+            45deg,
+            var(--card-line, rgba(242, 193, 78, 0.55)) 0 2px,
+            transparent 2px 9px
+          ),
+          repeating-linear-gradient(
+            -45deg,
+            var(--card-line, rgba(242, 193, 78, 0.55)) 0 2px,
+            transparent 2px 9px
+          ),
+          var(--card-bg, #1f5a3c);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+      }
+      .flat {
+        height: 10px;
+        border-radius: 3px;
+        background: var(--card-flat, linear-gradient(180deg, #fff6df, #d8c495));
+        border: 1px solid var(--card-edge, var(--gold));
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      }
+      .house {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
+      .house.grey {
+        --card-bg: #3a3a3d;
+        --card-line: rgba(229, 72, 63, 0.45);
+        --card-edge: #8c8782;
+        --card-flat: linear-gradient(180deg, #c9c4bd, #8c8782);
+      }
+
+      /* card-shaped houses */
+      .hcard {
+        width: 120px;
+        height: 170px;
+        border-radius: 12px;
+        box-sizing: border-box;
+        background: linear-gradient(170deg, #fffaf0, #efe2c2);
+        border: 3px solid var(--gold);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .hcard svg {
+        width: 78px;
+        height: 78px;
+      }
+      .hcard .pip {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: var(--red);
+        transform: rotate(45deg);
+        top: 12px;
+        left: 12px;
+        border-radius: 2px;
+      }
+      .hcard .pip.b {
+        top: auto;
+        left: auto;
+        bottom: 12px;
+        right: 12px;
+      }
+      .hcard.grey {
+        background: linear-gradient(170deg, #b9b5ae, #8f8a84);
+        border-color: #6e6a66;
+      }
+      .hcard.grey .pip {
+        background: #5b5753;
+      }
+
+      .bill {
+        width: 104px;
+        height: 50px;
+        border-radius: 5px;
+        box-sizing: border-box;
+        background: linear-gradient(135deg, #2c6a43, #1e4f31);
+        border: 2px solid #8fd1a1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #eafbea;
+        font-family: "HF Display", sans-serif;
+        font-weight: 900;
+        font-size: 30px;
+      }
+      .bill::after {
+        content: "$";
+      }
+
+      /* people */
+      .person {
+        width: 64px;
+        height: 170px;
+      }
+      .person .head {
+        position: absolute;
+        left: 12px;
+        top: 26px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e7d3b3;
+      }
+      .person .body {
+        position: absolute;
+        left: 2px;
+        top: 70px;
+        width: 60px;
+        height: 100px;
+        border-radius: 26px 26px 8px 8px;
+      }
+      .person .key {
+        position: absolute;
+        left: 8px;
+        top: -34px;
+        width: 48px;
+        height: 48px;
+      }
+
+      /* bank / machine / map */
+      .bank {
+        width: 300px;
+        height: 190px;
+      }
+      .machine {
+        width: 420px;
+        height: 380px;
+      }
+      .mort {
+        width: 104px;
+        height: 140px;
+        border-radius: 10px;
+        box-sizing: border-box;
+        background: #fbf7ee;
+        border: 2px solid #c9bfa8;
+        padding: 14px 12px;
+      }
+      .mort b {
+        display: block;
+        font-family: "HF Mono", monospace;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        color: #3a3328;
+        font-weight: 500;
+      }
+      .mort i {
+        display: block;
+        height: 6px;
+        margin-top: 10px;
+        border-radius: 3px;
+        background: #d9cfba;
+      }
+      .aaa {
+        width: 104px;
+        height: 140px;
+        border-radius: 10px;
+        box-sizing: border-box;
+        background: linear-gradient(150deg, #ffe59a, #e2a93b 55%, #b8862b);
+        border: 2px solid #fff1c4;
+        box-shadow: 0 0 28px rgba(242, 193, 78, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #2b1d05;
+        font-family: "HF Display", sans-serif;
+        font-weight: 900;
+        font-size: 34px;
+      }
+      .aaa .shine {
+        position: absolute;
+        top: -40px;
+        left: -60px;
+        width: 40px;
+        height: 240px;
+        background: rgba(255, 255, 255, 0.7);
+        filter: blur(6px);
+      }
+      .mini {
+        width: 26px;
+        height: 36px;
+        border-radius: 4px;
+        background: linear-gradient(150deg, #ffe59a, #e2a93b);
+        box-shadow: 0 0 16px rgba(242, 193, 78, 0.9);
+      }
+
+      /* AI */
+      .flipper {
+        width: 150px;
+        height: 200px;
+        perspective: 900px;
+      }
+      .flip-inner {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+      }
+      .face {
+        position: absolute;
+        inset: 0;
+        backface-visibility: hidden;
+        border-radius: 14px;
+      }
+      .face.front {
+        width: 150px;
+        height: 200px;
+        font-size: 44px;
+      }
+      .face.back {
+        transform: rotateY(180deg);
+        background: #10231a;
+        border: 3px solid var(--gold);
+        box-sizing: border-box;
+        box-shadow: 0 0 34px rgba(80, 200, 140, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .rack {
+        width: 190px;
+        height: 330px;
+        border-radius: 12px;
+        box-sizing: border-box;
+        background: linear-gradient(180deg, #1a2a22, #0f1914);
+        border: 2px solid #3d6b52;
+        padding: 110px 16px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .unit {
+        height: 22px;
+        border-radius: 4px;
+        background: #0a120e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 10px;
+      }
+      .led {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #6cf0a6;
+        box-shadow: 0 0 8px #6cf0a6;
+      }
+      .led.g {
+        background: var(--gold);
+        box-shadow: 0 0 8px var(--gold);
+      }
+
+      /* captions */
+      #captions {
+        z-index: 50;
+      }
+      .cap-wrap {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 54px;
+        display: grid;
+        justify-items: center;
+      }
+      .cap {
+        grid-area: 1 / 1;
+        max-width: 1640px;
+        padding: 12px 30px 14px;
+        border-radius: 14px;
+        background: rgba(6, 7, 7, 0.78);
+        font-family: "HF Text", sans-serif;
+        font-weight: 600;
+        font-size: 42px;
+        line-height: 1.2;
+        text-align: center;
+        color: #ffffff;
+        opacity: 0;
+      }
+      #blackout {
+        z-index: 60;
+        background: #000;
+        opacity: 0;
+      }
+      #flash {
+        z-index: 61;
+        background: #fff;
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="casa-de-naipes"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="60"
+    >
+      <div id="glow-spot" class="layer"></div>
+      <div id="glow-gold" class="layer"></div>
+      <div id="glow-red" class="layer"></div>
+      <div id="glow-ai" class="layer"></div>
+
+      <!-- 0:00 Apertura -->
+      <section id="s1" class="clip" data-start="0" data-duration="5.6" data-track-index="1">
+        <div id="s1-stage" class="stage">
+          <div id="s1-year" class="title" style="top: 330px; font-size: 300px; color: var(--cream)">
+            <span class="word">2</span><span class="word">0</span><span class="word">0</span
+            ><span class="word">8</span>
+          </div>
+          <div id="s1-house" class="house" style="left: 1430px; top: 840px"></div>
+        </div>
+      </section>
+
+      <!-- 0:05 Dinero barato -->
+      <section id="s2" class="clip" data-start="4.9" data-duration="7.6" data-track-index="2">
+        <div id="s2-stage" class="stage">
+          <svg id="s2-trend" class="abs" width="1920" height="1080">
+            <path
+              id="s2-trend-line"
+              d="M 120 760 C 520 720, 820 640, 1100 560 S 1600 360, 1800 300"
+              fill="none"
+              stroke="#6fd492"
+              stroke-width="8"
+              stroke-linecap="round"
+            />
+            <path id="s2-trend-head" d="M 1772 286 L 1822 292 L 1796 334 Z" fill="#6fd492" />
+          </svg>
+          <div id="s2-bills" class="abs" data-layout-allow-overflow></div>
+          <div id="s2-row" class="abs"></div>
+          <div id="s2-title" class="title" style="top: 92px">
+            <span id="s2-label" style="font-size: 84px; font-weight: 700; color: var(--cream)"
+              >Tasa de la Fed:</span
+            >
+            <span
+              id="s2-rate"
+              style="font-size: 210px; color: var(--gold); font-variant-numeric: tabular-nums"
+              >1%</span
+            >
+          </div>
+          <div id="s2-tag" class="tag" style="top: 318px">EE. UU. · 2003</div>
+        </div>
+      </section>
+
+      <!-- 0:12 Préstamos para todos -->
+      <section id="s3" class="clip" data-start="11.8" data-duration="7.7" data-track-index="3">
+        <div id="s3-stage" class="stage">
+          <div id="s3-title" class="title" style="top: 96px; font-size: 128px">
+            <span class="word" style="color: var(--cream)">Hipotecas</span>
+            <span id="s3-sub" class="word" style="color: var(--gold)">subprime</span>
+          </div>
+          <svg id="s3-bank" class="abs bank" viewBox="0 0 300 190">
+            <polygon points="20,62 150,8 280,62" fill="#f2c14e" />
+            <rect x="34" y="66" width="232" height="14" fill="#e6d3a0" />
+            <rect x="52" y="86" width="22" height="78" fill="#e6d3a0" />
+            <rect x="102" y="86" width="22" height="78" fill="#e6d3a0" />
+            <rect x="176" y="86" width="22" height="78" fill="#e6d3a0" />
+            <rect x="226" y="86" width="22" height="78" fill="#e6d3a0" />
+            <rect x="24" y="166" width="252" height="16" fill="#f2c14e" />
+            <circle cx="150" cy="42" r="12" fill="#1d4a33" />
+          </svg>
+          <div id="s3-queue" class="abs"></div>
+          <div
+            id="s3-floor"
+            class="abs"
+            style="width: 1920px; height: 4px; top: 836px; background: rgba(242, 193, 78, 0.35)"
+          ></div>
+        </div>
+      </section>
+
+      <!-- 0:19 La fábrica de riesgo -->
+      <section id="s4" class="clip" data-start="18.8" data-duration="8.2" data-track-index="4">
+        <div id="s4-stage" class="stage">
+          <div id="s4-factory" class="stage">
+            <div
+              id="s4-belt"
+              class="abs"
+              style="
+                top: 716px;
+                width: 1920px;
+                height: 18px;
+                background: repeating-linear-gradient(90deg, #3c3a33 0 30px, #24231f 30px 60px);
+                border-top: 3px solid #6b6556;
+              "
+            ></div>
+            <div id="s4-items" class="abs"></div>
+            <svg id="s4-machine" class="abs machine" viewBox="0 0 420 380">
+              <rect
+                x="10"
+                y="40"
+                width="400"
+                height="330"
+                rx="26"
+                fill="#1c3a2a"
+                stroke="#f2c14e"
+                stroke-width="5"
+              />
+              <rect
+                x="60"
+                y="0"
+                width="70"
+                height="60"
+                rx="10"
+                fill="#244a35"
+                stroke="#f2c14e"
+                stroke-width="4"
+              />
+              <rect
+                x="290"
+                y="10"
+                width="60"
+                height="50"
+                rx="10"
+                fill="#244a35"
+                stroke="#f2c14e"
+                stroke-width="4"
+              />
+              <rect x="40" y="250" width="340" height="96" rx="14" fill="#0e1f16" />
+              <rect id="s4-slot" x="60" y="285" width="300" height="26" rx="8" fill="#f2c14e" />
+              <g id="s4-gear1">
+                <circle
+                  cx="140"
+                  cy="150"
+                  r="56"
+                  fill="none"
+                  stroke="#f2c14e"
+                  stroke-width="16"
+                  stroke-dasharray="18 14"
+                />
+                <circle cx="140" cy="150" r="20" fill="#f2c14e" />
+              </g>
+              <g id="s4-gear2">
+                <circle
+                  cx="280"
+                  cy="150"
+                  r="56"
+                  fill="none"
+                  stroke="#6fd492"
+                  stroke-width="16"
+                  stroke-dasharray="18 14"
+                />
+                <circle cx="280" cy="150" r="20" fill="#6fd492" />
+              </g>
+            </svg>
+          </div>
+          <div id="s4-mapwrap" class="stage">
+            <svg id="s4-map" class="abs" width="1920" height="1080"></svg>
+            <div id="s4-minis" class="abs"></div>
+          </div>
+          <div id="s4-title" class="title" style="top: 56px; font-size: 168px; color: var(--gold)">
+            <span class="word">A</span><span class="word">A</span><span class="word">A</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 0:27 La grieta -->
+      <section id="s5" class="clip" data-start="27" data-duration="6" data-track-index="5">
+        <div id="s5-stage" class="stage">
+          <svg id="s5-chart" class="abs" width="1920" height="1080">
+            <line x1="260" y1="770" x2="1680" y2="770" stroke="#5c5955" stroke-width="3" />
+            <g font-family="HF Mono, monospace" font-size="24" fill="#bdb7af">
+              <text x="260" y="808" text-anchor="middle">2000</text>
+              <text x="727" y="808" text-anchor="middle">2003</text>
+              <text x="1193" y="808" text-anchor="middle">2006</text>
+              <text x="1660" y="808" text-anchor="middle">2009</text>
+            </g>
+            <path
+              id="s5-rise"
+              fill="none"
+              stroke="#e8e2d8"
+              stroke-width="9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              id="s5-fall"
+              fill="none"
+              stroke="#e5483f"
+              stroke-width="9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <polyline
+              id="s5-crack"
+              points="1271,180 1250,280 1292,360 1244,450 1298,540 1256,640 1284,770"
+              fill="none"
+              stroke="#e5483f"
+              stroke-width="6"
+              stroke-linejoin="bevel"
+            />
+            <circle id="s5-peak" cx="1271" cy="370" r="14" fill="#e8e2d8" />
+          </svg>
+          <div id="s5-houses" class="abs"></div>
+          <div
+            id="s5-year"
+            class="title"
+            style="top: 120px; left: 200px; right: auto; font-size: 220px; color: #f1ece4"
+          >
+            <span class="word">2</span><span class="word">0</span><span class="word">0</span
+            ><span class="word">6</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 0:33 El colapso -->
+      <section id="s6" class="clip" data-start="33" data-duration="8.5" data-track-index="6">
+        <div id="s6-stage" class="stage">
+          <div id="s6-housewrap" class="stage" data-layout-allow-overflow>
+            <div id="s6-house" class="house grey" style="left: 960px; top: 840px"></div>
+          </div>
+          <div id="s6-city" class="stage" data-layout-allow-overflow>
+            <div id="s6-skyline" class="abs"></div>
+          </div>
+          <div id="s6-date" class="title" style="top: 70px; font-size: 136px; color: #ff6a5f">
+            15/09/2008
+          </div>
+        </div>
+      </section>
+
+      <!-- 0:41 La factura -->
+      <section id="s7" class="clip" data-start="40.8" data-duration="6.7" data-track-index="7">
+        <div id="s7-stage" class="stage">
+          <div id="s7-houses" class="abs"></div>
+          <svg id="s7-temple" class="abs" width="680" height="480" viewBox="0 0 680 480">
+            <polygon points="40,120 340,10 640,120" fill="#a29d97" />
+            <polygon points="90,108 340,26 590,108" fill="#8a857f" />
+            <rect x="40" y="124" width="600" height="40" fill="#b3aea7" />
+            <g fill="#c4bfb8">
+              <rect x="80" y="170" width="44" height="230" />
+              <rect x="180" y="170" width="44" height="230" />
+              <rect x="280" y="170" width="44" height="230" />
+              <rect x="356" y="170" width="44" height="230" />
+              <rect x="456" y="170" width="44" height="230" />
+              <rect x="556" y="170" width="44" height="230" />
+            </g>
+            <rect x="20" y="402" width="640" height="24" fill="#8a857f" />
+            <rect x="0" y="428" width="680" height="26" fill="#6f6b66" />
+            <rect x="140" y="140" width="400" height="18" fill="#1b1b1d" opacity="0.35" />
+          </svg>
+          <svg id="s7-buoy" class="abs" width="170" height="170" viewBox="0 0 170 170">
+            <circle cx="85" cy="85" r="62" fill="none" stroke="#f4f1ec" stroke-width="36" />
+            <circle
+              cx="85"
+              cy="85"
+              r="62"
+              fill="none"
+              stroke="#e5483f"
+              stroke-width="36"
+              stroke-dasharray="48.7 48.7"
+            />
+            <circle
+              cx="85"
+              cy="85"
+              r="44"
+              fill="none"
+              stroke="#000"
+              stroke-opacity="0.2"
+              stroke-width="2"
+            />
+          </svg>
+          <div id="s7-title" class="title" style="top: 66px">
+            <span
+              id="s7-num"
+              style="font-size: 150px; color: #ff6a5f; font-variant-numeric: tabular-nums"
+              >700.000</span
+            >
+            <span style="font-size: 64px; font-weight: 700; color: #f1ece4">millones USD</span>
+          </div>
+          <div id="s7-tag" class="tag" style="top: 240px">Rescate TARP · EE. UU. · 2008</div>
+        </div>
+      </section>
+
+      <!-- 0:47 Hoy: la IA -->
+      <section id="s8" class="clip" data-start="46.8" data-duration="8" data-track-index="8">
+        <div id="s8-stage" class="stage">
+          <div
+            id="s8-bubble"
+            class="abs"
+            style="
+              left: 360px;
+              top: -80px;
+              width: 1200px;
+              height: 1200px;
+              border-radius: 50%;
+              background: radial-gradient(
+                circle at 35% 30%,
+                rgba(255, 255, 255, 0.16),
+                rgba(242, 193, 78, 0.06) 40%,
+                rgba(80, 200, 140, 0.1) 70%,
+                rgba(255, 255, 255, 0.22) 71.5%,
+                transparent 72%
+              );
+            "
+          ></div>
+          <div id="s8-racks" class="abs"></div>
+          <div id="s8-cards" class="abs"></div>
+          <div id="s8-title" class="title" style="top: 70px; font-size: 120px; color: var(--gold)">
+            ¿Burbuja de la IA?
+          </div>
+          <div
+            id="s8-ring"
+            class="abs"
+            style="
+              left: 460px;
+              top: 20px;
+              width: 1000px;
+              height: 1000px;
+              border-radius: 50%;
+              border: 10px solid rgba(255, 255, 255, 0.85);
+            "
+          ></div>
+        </div>
+      </section>
+
+      <!-- 0:55 Cierre -->
+      <section id="s9" class="clip" data-start="54.4" data-duration="4.6" data-track-index="9">
+        <div id="s9-stage" class="stage">
+          <div id="s9-house" class="house" style="left: 960px; top: 850px"></div>
+          <div id="s9-title" class="title" style="top: 86px; font-size: 104px; color: #f6eedb">
+            <span class="word">¿Quién</span><span class="word">asume</span
+            ><span class="word">el</span
+            ><span class="word" style="color: var(--gold)">riesgo?</span>
+          </div>
+        </div>
+      </section>
+
+      <div id="vignette" class="layer"></div>
+
+      <section id="captions" class="clip" data-start="0" data-duration="59" data-track-index="10">
+        <div id="cap-wrap" class="cap-wrap"></div>
+      </section>
+
+      <div id="blackout" class="layer"></div>
+      <div id="flash" class="layer"></div>
+
+      <audio
+        id="score"
+        src="audio/score.m4a"
+        data-start="0"
+        data-duration="60"
+        data-track-index="11"
+        data-volume="0.9"
+      ></audio>
+    </div>
+
+    <script>
+      (() => {
+        // ---------- helpers ----------
+        const $ = (s) => document.querySelector(s);
+        const mk = (tag, cls, parent, html) => {
+          const e = document.createElement(tag);
+          if (cls) e.className = cls;
+          if (html) e.innerHTML = html;
+          parent.appendChild(e);
+          return e;
+        };
+        const rng = (seed) => () => {
+          seed |= 0;
+          seed = (seed + 0x6d2b79f5) | 0;
+          let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+        const tl = gsap.timeline({ paused: true });
+
+        // ---------- card house ----------
+        const CW = 46;
+        const CH = 150;
+        const TILT = 15;
+        const rad = (TILT * Math.PI) / 180;
+        function buildHouse(host) {
+          const cards = [];
+          const levels = [
+            { base: 0, apex: [-150, 0, 150] },
+            { base: -152, apex: [-75, 75] },
+            { base: -304, apex: [0] },
+          ];
+          levels.forEach((lv, li) => {
+            lv.apex.forEach((ax) => {
+              [-1, 1].forEach((side) => {
+                const bx = ax + side * (CH * Math.sin(rad) + 4);
+                const cx = bx - (side * CH * Math.sin(rad)) / 2;
+                const cy = lv.base - (CH * Math.cos(rad)) / 2;
+                const el = mk("div", "pc abs", host);
+                const rest = { x: cx - CW / 2, y: cy - CH / 2, rotation: -side * TILT };
+                gsap.set(el, rest);
+                cards.push({ el, rest, level: li, kind: "card" });
+              });
+            });
+            if (li < 2) {
+              const w = (lv.apex.length - 1) * 150 + 130;
+              const el = mk("div", "flat abs", host);
+              el.style.width = w + "px";
+              const rest = {
+                x: -w / 2 + (lv.apex[0] + lv.apex[lv.apex.length - 1]) / 2,
+                y: lv.base - 152,
+                rotation: 0,
+              };
+              gsap.set(el, rest);
+              cards.push({ el, rest, level: li + 0.5, kind: "flat" });
+            }
+          });
+          return cards;
+        }
+        function jitter(cards, start, end, amp, seed) {
+          const r = rng(seed);
+          cards.forEach((c) => {
+            const period = 0.08 + r() * 0.06;
+            const reps = Math.max(1, Math.floor((end - start) / period) - 1);
+            tl.fromTo(
+              c.el,
+              { rotation: c.rest.rotation - amp * (0.5 + r()) },
+              {
+                rotation: c.rest.rotation + amp * (0.5 + r()),
+                duration: period,
+                ease: "sine.inOut",
+                yoyo: true,
+                repeat: reps,
+              },
+              start + r() * 0.05,
+            );
+          });
+        }
+
+        // ---------- card-shaped house ----------
+        const HOUSE_SVG =
+          '<svg viewBox="0 0 80 80"><polygon points="6,38 40,8 74,38" fill="#1d4a33"/><rect x="14" y="36" width="52" height="38" fill="#3f9b62"/><rect x="33" y="50" width="14" height="24" fill="#f2c14e"/><rect x="19" y="44" width="10" height="10" fill="#fff6df"/><rect x="51" y="44" width="10" height="10" fill="#fff6df"/></svg>';
+        const HOUSE_SVG_GREY =
+          '<svg viewBox="0 0 80 80"><polygon points="6,38 40,8 74,38" fill="#3a3a3d"/><rect x="14" y="36" width="52" height="38" fill="#5b5753"/><rect x="33" y="50" width="14" height="24" fill="#26262a"/><rect x="19" y="44" width="10" height="10" fill="#26262a"/><rect x="51" y="44" width="10" height="10" fill="#26262a"/></svg>';
+        function houseCard(parent, grey) {
+          const e = mk(
+            "div",
+            "hcard abs" + (grey ? " grey" : ""),
+            parent,
+            (grey ? HOUSE_SVG_GREY : HOUSE_SVG) + '<i class="pip"></i><i class="pip b"></i>',
+          );
+          return e;
+        }
+
+        // ================= S1 · 0:00 – 0:05 =================
+        const s1Cards = buildHouse($("#s1-house"));
+        gsap.set("#s1-house", { scale: 1.15, transformOrigin: "0 0" });
+        const order1 = [...s1Cards].sort((a, b) => a.level - b.level);
+        order1.forEach((c, i) => {
+          tl.fromTo(
+            c.el,
+            { y: c.rest.y - 700, opacity: 0, rotation: c.rest.rotation + (i % 2 ? 25 : -25) },
+            {
+              y: c.rest.y,
+              opacity: 1,
+              rotation: c.rest.rotation,
+              duration: 0.5,
+              ease: "power3.out",
+            },
+            0.1 + i * 0.07,
+          );
+        });
+        jitter(s1Cards, 1.75, 5.4, 0.5, 11);
+        tl.fromTo(
+          "#s1-year .word",
+          { y: 140, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, ease: "power4.out", stagger: 0.08 },
+          0.35,
+        );
+        tl.fromTo("#s1-year", { x: -330 }, { x: -380, duration: 5.4, ease: "none" }, 0);
+        tl.fromTo(
+          "#s1-stage",
+          { scale: 1 },
+          { scale: 1.06, duration: 4.8, ease: "none", transformOrigin: "60% 60%" },
+          0,
+        );
+        tl.fromTo("#glow-spot", { opacity: 0 }, { opacity: 1, duration: 1.2 }, 0);
+        // zoom-through into the euphoria
+        tl.to("#s1-stage", { scale: 2.6, opacity: 0, duration: 0.55, ease: "power3.in" }, 4.95);
+        tl.to("#glow-spot", { opacity: 0, duration: 0.5 }, 5.0);
+        tl.fromTo("#glow-gold", { opacity: 0 }, { opacity: 1, duration: 0.6 }, 5.0);
+
+        // ================= S2 · 0:05 – 0:12 =================
+        tl.fromTo(
+          "#s2-stage",
+          { scale: 0.7, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.6, ease: "power3.out" },
+          5.05,
+        );
+        const row = $("#s2-row");
+        const houses2 = [];
+        for (let i = 0; i < 11; i++) {
+          const h = houseCard(row);
+          const x = 960 - 5 * 165 + i * 165 - 60;
+          gsap.set(h, { x, y: 640 });
+          houses2.push(h);
+          tl.fromTo(
+            h,
+            { y: 900, rotation: i % 2 ? 6 : -6 },
+            { y: 640, rotation: 0, duration: 0.6, ease: "back.out(1.6)" },
+            5.3 + Math.abs(i - 5) * 0.06,
+          );
+        }
+        // "las casas nunca bajan": houses climb with the trend line
+        houses2.forEach((h, i) => {
+          tl.to(h, { y: 640 - i * 9, duration: 1.4, ease: "power2.inOut" }, 8.6 + i * 0.04);
+        });
+        const trend = $("#s2-trend-line");
+        const tlen = trend.getTotalLength();
+        gsap.set(trend, { strokeDasharray: tlen });
+        tl.fromTo(
+          trend,
+          { strokeDashoffset: tlen },
+          { strokeDashoffset: 0, duration: 2.6, ease: "power2.inOut" },
+          8.5,
+        );
+        tl.fromTo(
+          "#s2-trend-head",
+          { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" },
+          { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" },
+          10.9,
+        );
+        // falling money
+        const r2 = rng(2003);
+        const bills = $("#s2-bills");
+        for (let i = 0; i < 34; i++) {
+          const b = mk("div", "bill abs", bills);
+          const x = 60 + r2() * 1760;
+          const t0 = 5.4 + r2() * 5.6;
+          const dur = 1.1 + r2() * 0.6;
+          tl.fromTo(
+            b,
+            { x, y: 380, rotation: r2() * 80 - 40, opacity: 0 },
+            {
+              x: x + (r2() * 160 - 80),
+              y: 660 + r2() * 60,
+              rotation: r2() * 360 - 180,
+              duration: dur,
+              ease: "power1.in",
+            },
+            t0,
+          );
+          tl.to(b, { opacity: 1, duration: 0.25 }, t0);
+          tl.to(b, { opacity: 0, duration: 0.25 }, t0 + dur - 0.2);
+        }
+        // the rate falls to 1%
+        const rate = { v: 6.5 };
+        const rateEl = $("#s2-rate");
+        tl.fromTo(
+          "#s2-title",
+          { y: -60, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+          5.4,
+        );
+        tl.fromTo(
+          rate,
+          { v: 6.5 },
+          {
+            v: 1,
+            duration: 1.8,
+            ease: "power3.out",
+            onUpdate: () => {
+              rateEl.textContent = (Math.round(rate.v * 2) / 2).toString().replace(".", ",") + "%";
+            },
+          },
+          5.6,
+        );
+        tl.fromTo(
+          "#s2-rate",
+          { scale: 1 },
+          { scale: 1.08, duration: 0.18, yoyo: true, repeat: 1, ease: "power2.out" },
+          7.4,
+        );
+        tl.fromTo("#s2-tag", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5 }, 6.0);
+        tl.fromTo("#s2-stage", { x: 0 }, { x: -40, duration: 6.3, ease: "none" }, 5.5);
+        // push left into s3
+        tl.to("#s2-stage", { x: -760, opacity: 0, duration: 0.55, ease: "power3.in" }, 11.85);
+
+        // ================= S3 · 0:12 – 0:19 =================
+        tl.fromTo(
+          "#s3-stage",
+          { x: 760, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+          12.0,
+        );
+        gsap.set("#s3-bank", { x: 810, y: 430 });
+        const queue = $("#s3-queue");
+        const r3 = rng(77);
+        const bodyCols = ["#c9a227", "#7fae7a", "#d8c9a3", "#5f8f6b", "#b98f3e", "#9cc49a"];
+        const SPEED = 320;
+        const T0 = 12.0;
+        const T1 = 19.4;
+        const KEY_SVG =
+          '<svg viewBox="0 0 48 48"><circle cx="16" cy="16" r="11" fill="none" stroke="#f2c14e" stroke-width="6"/><path d="M24 24 L42 42 M34 34 L28 40 M40 40 L35 45" stroke="#f2c14e" stroke-width="6" stroke-linecap="round"/></svg>';
+        for (let i = 0; i < 44; i++) {
+          const p = mk(
+            "div",
+            "person abs",
+            queue,
+            '<i class="key">' + KEY_SVG + '</i><i class="head"></i><i class="body"></i>',
+          );
+          p.querySelector(".body").style.background = bodyCols[Math.floor(r3() * bodyCols.length)];
+          const x0 = -260 + i * 112;
+          const x1 = x0 - SPEED * (T1 - T0);
+          tl.fromTo(p, { x: x0, y: 668 }, { x: x1, duration: T1 - T0, ease: "none" }, T0);
+          // walking bob
+          const reps = Math.floor((T1 - T0) / 0.22) - 1;
+          tl.fromTo(
+            p.querySelector(".body"),
+            { y: 0 },
+            { y: -5, duration: 0.22, yoyo: true, repeat: reps, ease: "sine.inOut" },
+            T0 + r3() * 0.2,
+          );
+          // the key, handed over at the bank (x ≈ 930)
+          const tKey = T0 + (x0 - 930) / SPEED;
+          const key = p.querySelector(".key");
+          if (tKey <= T0) {
+            gsap.set(key, { opacity: 1 });
+          } else if (tKey < T1) {
+            tl.fromTo(
+              key,
+              { opacity: 0, scale: 0.2, y: 30 },
+              { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: "back.out(2.5)" },
+              tKey,
+            );
+            tl.fromTo(
+              "#s3-bank",
+              { scale: 1 },
+              { scale: 1.04, duration: 0.08, yoyo: true, repeat: 1, transformOrigin: "50% 100%" },
+              tKey,
+            );
+          } else {
+            gsap.set(key, { opacity: 0 });
+          }
+        }
+        tl.fromTo(
+          "#s3-title .word",
+          { y: 90, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6, ease: "power4.out", stagger: 0.12 },
+          12.6,
+        );
+        tl.fromTo(
+          "#s3-sub",
+          { scale: 1 },
+          {
+            scale: 1.1,
+            duration: 0.2,
+            yoyo: true,
+            repeat: 1,
+            ease: "power2.out",
+            transformOrigin: "0% 80%",
+          },
+          15.6,
+        );
+        tl.to("#s3-sub", { color: "#ff7a5c", duration: 0.3 }, 15.6);
+        tl.to("#s3-stage", { x: -760, opacity: 0, duration: 0.55, ease: "power3.in" }, 18.85);
+
+        // ================= S4 · 0:19 – 0:27 =================
+        tl.fromTo(
+          "#s4-stage",
+          { x: 760, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+          19.0,
+        );
+        gsap.set("#s4-machine", { x: 750, y: 360 });
+        tl.fromTo(
+          "#s4-belt",
+          { backgroundPositionX: 0 },
+          { backgroundPositionX: -60 * 26, duration: 5, ease: "none" },
+          18.8,
+        );
+        tl.fromTo(
+          "#s4-gear1",
+          { rotation: 0, svgOrigin: "140 150" },
+          { rotation: 540, duration: 5, ease: "none" },
+          18.8,
+        );
+        tl.fromTo(
+          "#s4-gear2",
+          { rotation: 0, svgOrigin: "280 150" },
+          { rotation: -540, duration: 5, ease: "none" },
+          18.8,
+        );
+        const items = $("#s4-items");
+        for (let k = -4; k < 12; k++) {
+          const t = 19.0 + k * 0.34;
+          const m = mk(
+            "div",
+            "mort abs",
+            items,
+            "<b>HIPOTECA</b><i></i><i></i><i style='width:60%'></i><i></i>",
+          );
+          tl.fromTo(
+            m,
+            { x: 2000, y: 576, opacity: 1 },
+            { x: 1080, duration: 1.4, ease: "none" },
+            t,
+          );
+          tl.set(m, { opacity: 0 }, t + 1.4);
+          const a = mk("div", "aaa abs", items, '<i class="shine abs"></i>AAA');
+          a.setAttribute("data-layout-allow-overflow", "");
+          gsap.set(a, { x: 760, y: 576, opacity: 0 });
+          tl.set(a, { opacity: 1 }, t + 1.55);
+          tl.fromTo(
+            a,
+            { x: 760, y: 576 },
+            { x: -160, duration: 1.4, ease: "none", immediateRender: false },
+            t + 1.55,
+          );
+          tl.set(a, { opacity: 0 }, t + 2.95);
+          tl.fromTo(
+            a.querySelector(".shine"),
+            { x: 0 },
+            { x: 240, duration: 0.6, ease: "power1.inOut" },
+            t + 1.7,
+          );
+          tl.fromTo(
+            "#s4-slot",
+            { opacity: 1 },
+            { opacity: 0.35, duration: 0.1, yoyo: true, repeat: 1 },
+            t + 1.4,
+          );
+        }
+        // zoom out to the world map
+        tl.to(
+          "#s4-factory",
+          { scale: 0.35, opacity: 0, duration: 0.7, ease: "power3.in", transformOrigin: "50% 60%" },
+          22.7,
+        );
+        const map = $("#s4-map");
+        const NS = "http://www.w3.org/2000/svg";
+        const LAND = [
+          [
+            0,
+            [
+              [14, 20],
+              [24, 32],
+              [39, 39],
+              [48, 48],
+              [56, 64],
+            ],
+          ],
+          [
+            1,
+            [
+              [4, 8],
+              [11, 21],
+              [25, 32],
+              [40, 42],
+              [50, 71],
+            ],
+          ],
+          [
+            2,
+            [
+              [3, 8],
+              [8, 17],
+              [20, 24],
+              [26, 31],
+              [32, 32],
+              [38, 42],
+              [42, 71],
+            ],
+          ],
+          [
+            3,
+            [
+              [3, 8],
+              [8, 16],
+              [20, 23],
+              [26, 27],
+              [37, 42],
+              [42, 70],
+            ],
+          ],
+          [
+            4,
+            [
+              [9, 9],
+              [10, 17],
+              [21, 24],
+              [35, 35],
+              [37, 41],
+              [41, 67],
+            ],
+          ],
+          [
+            5,
+            [
+              [10, 24],
+              [34, 36],
+              [36, 44],
+              [44, 63],
+            ],
+          ],
+          [
+            6,
+            [
+              [11, 25],
+              [35, 44],
+              [44, 63],
+              [64, 64],
+            ],
+          ],
+          [
+            7,
+            [
+              [11, 22],
+              [34, 36],
+              [38, 41],
+              [41, 45],
+              [45, 61],
+              [64, 64],
+            ],
+          ],
+          [
+            8,
+            [
+              [11, 20],
+              [34, 35],
+              [36, 38],
+              [40, 45],
+              [45, 60],
+              [61, 61],
+              [63, 64],
+            ],
+          ],
+          [
+            9,
+            [
+              [12, 19],
+              [34, 42],
+              [43, 46],
+              [46, 60],
+            ],
+          ],
+          [
+            10,
+            [
+              [13, 16],
+              [19, 19],
+              [33, 43],
+              [43, 47],
+              [49, 60],
+            ],
+          ],
+          [
+            11,
+            [
+              [15, 16],
+              [20, 20],
+              [32, 43],
+              [44, 47],
+              [50, 54],
+              [55, 58],
+              [60, 60],
+            ],
+          ],
+          [
+            12,
+            [
+              [17, 18],
+              [32, 44],
+              [44, 46],
+              [50, 52],
+              [55, 57],
+              [60, 60],
+            ],
+          ],
+          [
+            13,
+            [
+              [18, 19],
+              [33, 44],
+              [51, 51],
+              [56, 57],
+              [60, 60],
+            ],
+          ],
+          [
+            14,
+            [
+              [20, 24],
+              [34, 45],
+              [52, 52],
+              [56, 56],
+            ],
+          ],
+          [
+            15,
+            [
+              [20, 26],
+              [38, 44],
+              [55, 59],
+            ],
+          ],
+          [
+            16,
+            [
+              [20, 27],
+              [38, 43],
+              [56, 63],
+            ],
+          ],
+          [
+            17,
+            [
+              [20, 29],
+              [38, 43],
+              [57, 59],
+              [64, 65],
+            ],
+          ],
+          [
+            18,
+            [
+              [20, 28],
+              [38, 43],
+              [45, 45],
+              [62, 64],
+            ],
+          ],
+          [
+            19,
+            [
+              [22, 28],
+              [38, 43],
+              [45, 45],
+              [60, 65],
+            ],
+          ],
+          [
+            20,
+            [
+              [22, 27],
+              [38, 42],
+              [58, 66],
+            ],
+          ],
+          [
+            21,
+            [
+              [22, 26],
+              [39, 42],
+              [58, 66],
+            ],
+          ],
+          [
+            22,
+            [
+              [21, 25],
+              [39, 41],
+              [59, 66],
+            ],
+          ],
+          [
+            23,
+            [
+              [21, 24],
+              [64, 65],
+              [71, 71],
+            ],
+          ],
+          [
+            24,
+            [
+              [21, 23],
+              [65, 65],
+              [70, 70],
+            ],
+          ],
+          [25, [[21, 22]]],
+          [26, [[21, 21]]],
+        ];
+        const P = 21;
+        const MX = 204;
+        const MY = 236;
+        const dots = document.createElementNS(NS, "g");
+        dots.setAttribute("fill", "rgba(230, 210, 150, 0.4)");
+        LAND.forEach(([r, spans]) =>
+          spans.forEach(([a, b]) => {
+            for (let c = a; c <= b; c++) {
+              const d = document.createElementNS(NS, "circle");
+              d.setAttribute("cx", MX + c * P + P / 2);
+              d.setAttribute("cy", MY + r * P + P / 2);
+              d.setAttribute("r", 4);
+              dots.appendChild(d);
+            }
+          }),
+        );
+        map.appendChild(dots);
+        const geo = (lon, lat) => [MX + ((lon + 180) / 5) * P, MY + ((80 - lat) / 5) * P];
+        const NY = geo(-74, 40.7);
+        const cities = [
+          geo(-0.1, 51.5),
+          geo(8.7, 50.1),
+          geo(-21.9, 64.1),
+          geo(139.7, 35.7),
+          geo(114.2, 22.3),
+          geo(55.3, 25.2),
+          geo(103.8, 1.3),
+          geo(151.2, -33.9),
+          geo(-46.6, -23.5),
+          geo(2.35, 48.9),
+        ];
+        const minis = $("#s4-minis");
+        const nyDot = document.createElementNS(NS, "circle");
+        nyDot.setAttribute("cx", NY[0]);
+        nyDot.setAttribute("cy", NY[1]);
+        nyDot.setAttribute("r", 12);
+        nyDot.setAttribute("fill", "#f2c14e");
+        map.appendChild(nyDot);
+        tl.fromTo(
+          nyDot,
+          { scale: 0, transformOrigin: "50% 50%" },
+          { scale: 1, duration: 0.4, ease: "back.out(3)" },
+          23.1,
+        );
+        cities.forEach(([x, y], i) => {
+          const cx = (NY[0] + x) / 2;
+          const cy = Math.min(NY[1], y) - 120 - Math.abs(x - NY[0]) * 0.12;
+          const path = document.createElementNS(NS, "path");
+          path.setAttribute("d", `M ${NY[0]} ${NY[1]} Q ${cx} ${cy} ${x} ${y}`);
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", "#f2c14e");
+          path.setAttribute("stroke-width", "3");
+          path.setAttribute("stroke-opacity", "0.75");
+          map.appendChild(path);
+          const len = path.getTotalLength();
+          gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
+          const t = 23.3 + i * 0.2;
+          tl.to(path, { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" }, t);
+          const dot = document.createElementNS(NS, "circle");
+          dot.setAttribute("cx", x);
+          dot.setAttribute("cy", y);
+          dot.setAttribute("r", 9);
+          dot.setAttribute("fill", "#6fd492");
+          map.appendChild(dot);
+          tl.fromTo(
+            dot,
+            { scale: 0, transformOrigin: "50% 50%" },
+            { scale: 1, duration: 0.35, ease: "back.out(3)" },
+            t + 1.1,
+          );
+          const m = mk("div", "mini abs", minis);
+          const prog = { p: 0 };
+          tl.fromTo(
+            prog,
+            { p: 0 },
+            {
+              p: 1,
+              duration: 1.2,
+              ease: "power2.inOut",
+              onUpdate: () => {
+                const q = 1 - prog.p;
+                const px = q * q * NY[0] + 2 * q * prog.p * cx + prog.p * prog.p * x;
+                const py = q * q * NY[1] + 2 * q * prog.p * cy + prog.p * prog.p * y;
+                gsap.set(m, { x: px - 13, y: py - 18 });
+              },
+            },
+            t,
+          );
+          tl.fromTo(m, { opacity: 0 }, { opacity: 1, duration: 0.15 }, t);
+          tl.to(m, { opacity: 0, scale: 0.4, duration: 0.25 }, t + 1.15);
+        });
+        tl.fromTo(
+          "#s4-mapwrap",
+          { scale: 1.35, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.8, ease: "power3.out", transformOrigin: "50% 50%" },
+          22.95,
+        );
+        tl.fromTo("#s4-mapwrap", { x: 0 }, { x: -30, duration: 3.6, ease: "none" }, 23.4);
+        gsap.set("#s4-title", { opacity: 0 });
+        tl.fromTo(
+          "#s4-title",
+          { opacity: 0, scale: 2.2 },
+          { opacity: 1, scale: 1, duration: 0.45, ease: "power4.in" },
+          23.6,
+        );
+        tl.fromTo("#s4-stage", { y: 0 }, { y: 8, duration: 0.06, yoyo: true, repeat: 3 }, 24.05);
+        tl.fromTo(
+          "#s4-title",
+          { textShadow: "0 0 0px rgba(242,193,78,0)" },
+          { textShadow: "0 0 40px rgba(242,193,78,0.8)", duration: 0.8, yoyo: true, repeat: 2 },
+          24.2,
+        );
+
+        // ================= S5 · 0:27 – 0:33 (hard cut, palette flips) =================
+        tl.set("#glow-gold", { opacity: 0 }, 27);
+        tl.set("#glow-red", { opacity: 1 }, 27);
+        const X = (yr) => 260 + ((yr - 2000) / 9) * 1400;
+        const Y = (v) => 740 - (v - 100) * 4.2;
+        const rise = [
+          [2000, 100],
+          [2001, 110],
+          [2002, 122],
+          [2003, 136],
+          [2004, 155],
+          [2005, 177],
+          [2006.5, 188],
+        ];
+        const fall = [
+          [2006.5, 188],
+          [2007, 184],
+          [2007.6, 176],
+          [2008, 160],
+          [2008.6, 146],
+          [2009, 140],
+        ];
+        const toD = (pts) =>
+          pts
+            .map(([a, b], i) => (i ? "L" : "M") + " " + X(a).toFixed(1) + " " + Y(b).toFixed(1))
+            .join(" ");
+        const riseEl = $("#s5-rise");
+        const fallEl = $("#s5-fall");
+        riseEl.setAttribute("d", toD(rise));
+        fallEl.setAttribute("d", toD(fall));
+        const rl = riseEl.getTotalLength();
+        const fl = fallEl.getTotalLength();
+        gsap.set(riseEl, { strokeDasharray: rl });
+        gsap.set(fallEl, { strokeDasharray: fl });
+        const crack = $("#s5-crack");
+        const cl = crack.getTotalLength();
+        gsap.set(crack, { strokeDasharray: cl });
+        tl.fromTo(
+          riseEl,
+          { strokeDashoffset: rl },
+          { strokeDashoffset: 0, duration: 1.6, ease: "power1.in" },
+          27.05,
+        );
+        tl.fromTo(
+          "#s5-peak",
+          { scale: 0, transformOrigin: "50% 50%" },
+          { scale: 1, duration: 0.3, ease: "back.out(3)" },
+          28.6,
+        );
+        tl.fromTo(
+          "#s5-year .word",
+          { y: 120, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.55, ease: "power4.out", stagger: 0.06 },
+          27.3,
+        );
+        // the break
+        tl.fromTo(
+          crack,
+          { strokeDashoffset: cl },
+          { strokeDashoffset: 0, duration: 0.25, ease: "power4.in" },
+          29.15,
+        );
+        tl.to("#s5-peak", { fill: "#e5483f", duration: 0.1 }, 29.3);
+        tl.fromTo(
+          "#s5-stage",
+          { x: 0 },
+          { x: 14, duration: 0.05, yoyo: true, repeat: 5, ease: "none" },
+          29.35,
+        );
+        tl.fromTo(
+          fallEl,
+          { strokeDashoffset: fl },
+          { strokeDashoffset: 0, duration: 1.2, ease: "power2.in" },
+          29.4,
+        );
+        tl.to("#s5-year", { color: "#ff6a5f", duration: 0.2 }, 29.35);
+        const hs = $("#s5-houses");
+        for (let i = 0; i < 4; i++) {
+          const hx = 1262 + i * 96;
+          const h = houseCard(hs, true);
+          gsap.set(h, { x: hx, y: 596, scale: 0.55, transformOrigin: "50% 100%" });
+          tl.fromTo(
+            h,
+            { opacity: 0, y: 640 },
+            { opacity: 1, y: 596, duration: 0.4, ease: "power3.out" },
+            29.6 + i * 0.08,
+          );
+          const sign = mk(
+            "div",
+            "abs",
+            hs,
+            '<svg width="120" height="96" viewBox="0 0 120 96"><rect x="57" y="40" width="6" height="56" fill="#d9d2c3"/><rect x="4" y="4" width="112" height="44" rx="6" fill="#fffaf0" stroke="#e5483f" stroke-width="4"/><text x="60" y="34" text-anchor="middle" font-family="HF Display, sans-serif" font-weight="900" font-size="21" fill="#c4271e">EN VENTA</text></svg>',
+          );
+          gsap.set(sign, { x: hx + 20, y: 672 });
+          tl.fromTo(
+            sign,
+            { scale: 0, rotation: -14, transformOrigin: "50% 100%" },
+            { scale: 0.62, rotation: i % 2 ? 6 : -6, duration: 0.4, ease: "back.out(2.6)" },
+            30.4 + i * 0.32,
+          );
+        }
+        tl.fromTo(
+          "#s5-stage",
+          { scale: 1 },
+          { scale: 1.04, duration: 5.6, ease: "none", transformOrigin: "60% 50%" },
+          27,
+        );
+        // breath of silence, then black before the hit
+        tl.to("#blackout", { opacity: 1, duration: 0.35, ease: "power2.in" }, 32.6);
+        tl.set("#blackout", { opacity: 0 }, 33);
+
+        // ================= S6 · 0:33 – 0:41 =================
+        tl.set("#flash", { opacity: 0.9 }, 33);
+        tl.to("#flash", { opacity: 0, duration: 0.25, ease: "power2.out" }, 33.04);
+        tl.fromTo(
+          "#s6-date",
+          { scale: 1.7, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.18, ease: "power4.in" },
+          33.0,
+        );
+        tl.fromTo(
+          "#s6-stage",
+          { x: 0, y: 0 },
+          { x: -12, y: 8, duration: 0.05, yoyo: true, repeat: 5, ease: "none" },
+          33.18,
+        );
+        const s6Cards = buildHouse($("#s6-house"));
+        gsap.set("#s6-house", { scale: 1.2, transformOrigin: "0 0" });
+        const r6 = rng(915);
+        const FLOOR = 0;
+        s6Cards.forEach((c) => {
+          const fromTop = 2.5 - c.level; // top level falls first
+          const t = 34.0 + fromTop * 0.42 + r6() * 0.12;
+          const dir = c.rest.x + 23 > 0 ? 1 : -1;
+          const dx = dir * (60 + r6() * 220);
+          const flat = c.kind === "flat";
+          const endY = flat ? FLOOR - 14 - r6() * 8 : FLOOR - CH / 2 - CW / 2 - r6() * 6;
+          const endRot = flat ? dir * (4 + r6() * 10) : dir * (82 + r6() * 16);
+          tl.to(
+            c.el,
+            {
+              x: c.rest.x + dx,
+              y: endY,
+              rotation: endRot,
+              duration: 0.55 + r6() * 0.2,
+              ease: "power2.in",
+            },
+            t,
+          );
+          tl.to(
+            c.el,
+            { y: endY - 10, duration: 0.1, yoyo: true, repeat: 1, ease: "power1.out" },
+            t + 0.75,
+          );
+        });
+        tl.to("#s6-housewrap", { x: -1950, duration: 0.8, ease: "power3.inOut" }, 37.0);
+        // skyline + Lehman tower
+        const sky = $("#s6-skyline");
+        const r6b = rng(1509);
+        const towers = [
+          { x: 120, w: 220, h: 380 },
+          { x: 360, w: 170, h: 470 },
+          { x: 760, w: 400, h: 600, main: true },
+          { x: 1200, w: 200, h: 430 },
+          { x: 1430, w: 240, h: 340 },
+          { x: 1690, w: 170, h: 480 },
+        ];
+        const windows = [];
+        towers.forEach((tw) => {
+          const b = mk("div", "abs", sky);
+          b.style.cssText += `width:${tw.w}px;height:${tw.h}px;background:${tw.main ? "#2a2a2e" : "#1d1d21"};border-top:4px solid ${tw.main ? "#8c8782" : "#3a3a3d"};`;
+          gsap.set(b, { x: tw.x, y: 836 - tw.h });
+          const cols = Math.floor((tw.w - 24) / 34);
+          const rows = Math.floor((tw.h - (tw.main ? 90 : 30)) / 34);
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              const w = mk("i", "abs", b);
+              w.style.cssText +=
+                "width:20px;height:20px;border-radius:2px;background:#ffd36b;box-shadow:0 0 10px rgba(255,211,107,0.6);";
+              gsap.set(w, {
+                x: 14 + c * 34 + (tw.w - 24 - cols * 34) / 2,
+                y: (tw.main ? 80 : 22) + r * 34,
+              });
+              windows.push({ w, main: !!tw.main });
+            }
+          }
+          if (tw.main) {
+            const s = mk("div", "abs", b, "LEHMAN BROTHERS");
+            s.style.cssText +=
+              "left:0;right:0;top:22px;text-align:center;font-family:'HF Mono',monospace;font-size:24px;letter-spacing:0.12em;color:#f1ece4;";
+          }
+        });
+        tl.fromTo("#s6-city", { x: 1950 }, { x: 0, duration: 0.8, ease: "power3.inOut" }, 37.0);
+        const shuffled = windows
+          .map((w) => ({ ...w, k: r6b() + (w.main ? 0 : 0.25) }))
+          .sort((a, b) => a.k - b.k);
+        shuffled.forEach((o, i) => {
+          tl.to(
+            o.w,
+            { background: "#121214", boxShadow: "0 0 0px rgba(0,0,0,0)", duration: 0.06 },
+            37.9 + (i / shuffled.length) * 2.9,
+          );
+        });
+        tl.fromTo(
+          "#s6-city",
+          { scale: 1 },
+          { scale: 1.05, duration: 3.6, ease: "none", transformOrigin: "50% 80%" },
+          37.6,
+        );
+        tl.to("#glow-red", { opacity: 0.55, duration: 0.5, yoyo: true, repeat: 5 }, 37.4);
+        tl.to("#s6-stage", { x: -760, opacity: 0, duration: 0.55, ease: "power3.in" }, 40.9);
+
+        // ================= S7 · 0:41 – 0:47 =================
+        tl.fromTo(
+          "#s7-stage",
+          { x: 760, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+          41.0,
+        );
+        gsap.set("#s7-temple", { x: 620, y: 380 });
+        const h7 = $("#s7-houses");
+        [80, 250, 420, 1380, 1550, 1720].forEach((x, i) => {
+          const h = houseCard(h7, true);
+          gsap.set(h, { x: x - 60, y: 650, scale: 0.92, transformOrigin: "50% 100%" });
+          tl.fromTo(
+            h,
+            { opacity: 0, y: 700 },
+            { opacity: 0.85, y: 650, duration: 0.5, ease: "power3.out" },
+            42.2 + i * 0.1,
+          );
+          tl.to(h, { opacity: 0.45, duration: 0.6 }, 44.2 + i * 0.12);
+        });
+        const num = { v: 0 };
+        const numEl = $("#s7-num");
+        tl.fromTo(
+          num,
+          { v: 0 },
+          {
+            v: 700000,
+            duration: 1.8,
+            ease: "power3.out",
+            onUpdate: () => {
+              numEl.textContent = (Math.round(num.v / 1000) * 1000).toLocaleString("de-DE");
+            },
+          },
+          41.3,
+        );
+        tl.fromTo(
+          "#s7-title",
+          { y: -50, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" },
+          41.45,
+        );
+        tl.fromTo("#s7-tag", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5 }, 41.8);
+        tl.fromTo(
+          "#s7-buoy",
+          { x: 875, y: -260, rotation: -120 },
+          { y: 312, rotation: 20, duration: 0.75, ease: "power3.in" },
+          42.0,
+        );
+        tl.to(
+          "#s7-buoy",
+          { y: 296, duration: 0.18, yoyo: true, repeat: 1, ease: "power2.out" },
+          42.75,
+        );
+        tl.fromTo(
+          "#s7-temple",
+          { scaleY: 1, transformOrigin: "50% 100%" },
+          { scaleY: 0.97, duration: 0.1, yoyo: true, repeat: 1 },
+          42.75,
+        );
+        tl.fromTo(
+          "#s7-stage",
+          { scale: 1 },
+          { scale: 1.05, duration: 5.4, ease: "none", transformOrigin: "50% 60%" },
+          41.4,
+        );
+
+        // ================= S8 · 0:47 – 0:55 (the shine returns) =================
+        tl.to("#glow-red", { opacity: 0, duration: 0.8 }, 46.9);
+        tl.fromTo("#glow-ai", { opacity: 0 }, { opacity: 1, duration: 0.8 }, 46.9);
+        tl.to("#s7-stage", { scale: 1.3, opacity: 0, duration: 0.6, ease: "power3.in" }, 46.85);
+        tl.fromTo(
+          "#s8-stage",
+          { scale: 0.75, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.7, ease: "power3.out" },
+          47.0,
+        );
+        const CHIP_SVG =
+          '<svg width="96" height="96" viewBox="0 0 96 96"><g stroke="#f2c14e" stroke-width="5" stroke-linecap="round"><path d="M28 6v14M48 6v14M68 6v14M28 76v14M48 76v14M68 76v14M6 28h14M6 48h14M6 68h14M76 28h14M76 48h14M76 68h14"/></g><rect x="20" y="20" width="56" height="56" rx="8" fill="#1d4a33" stroke="#6fd492" stroke-width="4"/><rect x="34" y="34" width="28" height="28" rx="4" fill="#6fd492"/></svg>';
+        const cardsWrap = $("#s8-cards");
+        const racksWrap = $("#s8-racks");
+        const r8 = rng(4747);
+        const xs = [440, 700, 960, 1220, 1480];
+        xs.forEach((x, i) => {
+          const f = mk(
+            "div",
+            "flipper abs",
+            cardsWrap,
+            '<div class="flip-inner"><div class="face front aaa">AAA</div><div class="face back">' +
+              CHIP_SVG +
+              "</div></div>",
+          );
+          gsap.set(f, { x: x - 75, y: 250 });
+          const inner = f.querySelector(".flip-inner");
+          tl.fromTo(
+            f,
+            { x: x - 75 - 900, opacity: 0 },
+            { x: x - 75, opacity: 1, duration: 0.7, ease: "power3.out" },
+            47.2 + i * 0.07,
+          );
+          tl.fromTo(
+            inner,
+            { rotationY: 0 },
+            { rotationY: 180, duration: 0.7, ease: "power2.inOut" },
+            48.3 + i * 0.18,
+          );
+          tl.to(f, { y: 425, scale: 0.5, duration: 0.6, ease: "power3.inOut" }, 50.0 + i * 0.08);
+          // server rack beneath
+          const rack = mk("div", "rack abs", racksWrap);
+          for (let u = 0; u < 7; u++) {
+            const unit = mk("div", "unit", rack);
+            for (let l = 0; l < 4; l++) {
+              const led = mk("i", "led" + (r8() > 0.6 ? " g" : ""), unit);
+              const per = 0.18 + r8() * 0.35;
+              const reps = Math.floor((54.6 - 50.6) / per) - 1;
+              tl.fromTo(
+                led,
+                { opacity: 1 },
+                { opacity: 0.15, duration: per, yoyo: true, repeat: reps, ease: "steps(1)" },
+                50.6 + r8() * 0.3,
+              );
+            }
+          }
+          tl.fromTo(
+            rack,
+            { x: x - 95, y: 1100 },
+            { y: 470, duration: 0.8, ease: "power3.out" },
+            49.3 + i * 0.08,
+          );
+        });
+        tl.fromTo(
+          "#s8-title",
+          { y: -60, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+          47.5,
+        );
+        tl.fromTo(
+          "#s8-bubble",
+          { scale: 0.45, opacity: 0, transformOrigin: "50% 50%" },
+          { scale: 1.05, opacity: 1, duration: 7.0, ease: "power1.inOut" },
+          47.2,
+        );
+        tl.fromTo(
+          "#s8-bubble",
+          { rotation: 0 },
+          { rotation: 30, duration: 7.2, ease: "none" },
+          47.2,
+        );
+        // the pop
+        gsap.set("#s8-ring", { opacity: 0 });
+        tl.to("#s8-bubble", { scale: 1.2, opacity: 0, duration: 0.18, ease: "power4.in" }, 54.2);
+        tl.fromTo(
+          "#s8-ring",
+          { scale: 0.9, opacity: 1, transformOrigin: "50% 50%" },
+          { scale: 1.6, opacity: 0, duration: 0.4, ease: "power2.out", immediateRender: false },
+          54.32,
+        );
+        tl.set("#flash", { opacity: 0.35 }, 54.32);
+        tl.to("#flash", { opacity: 0, duration: 0.3 }, 54.36);
+        tl.to("#s8-stage", { opacity: 0, duration: 0.3, ease: "power2.in" }, 54.3);
+        tl.to("#glow-ai", { opacity: 0, duration: 0.4 }, 54.3);
+
+        // ================= S9 · 0:55 – 0:59 =================
+        tl.fromTo(
+          "#glow-spot",
+          { opacity: 0 },
+          { opacity: 1, duration: 0.6, immediateRender: false },
+          54.4,
+        );
+        const s9Cards = buildHouse($("#s9-house"));
+        gsap.set("#s9-house", { scale: 1.25, transformOrigin: "0 0" });
+        tl.fromTo(
+          "#s9-stage",
+          { opacity: 0, scale: 1.12 },
+          { opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" },
+          54.45,
+        );
+        jitter(s9Cards, 54.5, 56.6, 0.4, 59);
+        jitter(
+          s9Cards.filter((c) => c.level !== 2),
+          56.6,
+          58.3,
+          1.1,
+          60,
+        );
+        jitter(
+          s9Cards.filter((c) => c.level === 2),
+          56.6,
+          57.7,
+          1.1,
+          61,
+        );
+        // top A-frame starts to give way... and freezes
+        s9Cards
+          .filter((c) => c.level === 2)
+          .forEach((c, i) => {
+            tl.to(
+              c.el,
+              {
+                rotation: c.rest.rotation + (i ? 9 : 6),
+                x: c.rest.x + 10,
+                y: c.rest.y + 4,
+                duration: 0.6,
+                ease: "power2.in",
+              },
+              57.75,
+            );
+          });
+        tl.fromTo(
+          "#s9-title .word",
+          { y: 70, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.5, ease: "power4.out", stagger: 0.12 },
+          55.0,
+        );
+        tl.fromTo(
+          "#s9-stage",
+          { filter: "saturate(1) brightness(1)" },
+          { filter: "saturate(0.35) brightness(1.08)", duration: 0.12 },
+          58.35,
+        );
+        tl.set("#blackout", { opacity: 1 }, 59);
+
+        // ---------- captions ----------
+        const CAPS = [
+          [0.3, 4.7, "2008. El año en que el sistema financiero casi se derrumba."],
+          [5.2, 8.4, "Todo empezó con dinero barato: tasas al 1%."],
+          [8.5, 11.8, "Y una creencia: las casas nunca bajan."],
+          [12.3, 15.5, "Los bancos prestaron a cualquiera, incluso sin ingresos ni trabajo:"],
+          [15.5, 18.7, "las hipotecas subprime."],
+          [19.3, 23.0, "Esas deudas se empaquetaron, se vendieron al mundo entero"],
+          [23.0, 26.7, "y recibieron la nota más alta: AAA."],
+          [27.3, 29.2, "En 2006 los precios cayeron."],
+          [29.2, 30.6, "Las cuotas subieron."],
+          [30.6, 32.0, "Nadie pudo pagar."],
+          [34.0, 37.4, "En septiembre de 2008 cayó Lehman Brothers."],
+          [37.4, 40.6, "El pánico se volvió global."],
+          [41.3, 44.0, "Rescates millonarios, millones de casas perdidas"],
+          [44.0, 46.6, "y una recesión mundial."],
+          [47.3, 51.0, "Hoy la euforia tiene otro nombre: inteligencia artificial."],
+          [51.0, 53.9, "Inversiones gigantes, promesas enormes."],
+          [54.0, 56.6, "Las burbujas no se ven desde adentro."],
+          [56.6, 59.0, "Se ven cuando revientan."],
+        ];
+        const capWrap = $("#cap-wrap");
+        CAPS.forEach(([a, b, text]) => {
+          const line = mk("div", "cap", capWrap);
+          const words = text.split(" ").map((w) => {
+            const s = mk("span", "", line);
+            s.textContent = w;
+            line.appendChild(document.createTextNode(" "));
+            return s;
+          });
+          tl.fromTo(
+            line,
+            { opacity: 0, y: 10 },
+            { opacity: 1, y: 0, duration: 0.14, ease: "power2.out" },
+            a,
+          );
+          const span = (b - a) * 0.85;
+          words.forEach((w, i) => {
+            tl.fromTo(
+              w,
+              { color: "#bdb8ae" },
+              { color: "#ffffff", duration: 0.12 },
+              a + (i / words.length) * span,
+            );
+          });
+          tl.set(line, { opacity: 0 }, b);
+        });
+
+        window.__timelines["casa-de-naipes"] = tl;
+      })();
+    </script>
+  </body>
+</html>
